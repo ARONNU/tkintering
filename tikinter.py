@@ -1,14 +1,12 @@
 import datetime
 import csv
-import os
 import tkinter as tk
-from tkinter import filedialog
-from PIL import Image, ImageTk
-import cv2
-import subprocess
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 now = datetime.datetime.now()
 current_date = now.strftime('%Y-%m-%d')
+current_time = now.strftime('%H:%M:%S')
 
 def read_attendance_data():
     attendance_data = []
@@ -19,67 +17,59 @@ def read_attendance_data():
     return attendance_data
 
 def display_attendance(data):
-    index = 1
-    for row in data:
-        name_label = tk.Label(window, text=row['Name'], bg='#EEEEEE', padx=10, pady=5)
-        type_label = tk.Label(window, text=row['Type'], bg='#EEEEEE', padx=10, pady=5)
-        date_label = tk.Label(window, text=row['Date'], bg='#EEEEEE', padx=10, pady=5)
-        time_label = tk.Label(window, text=row['Time'], bg='#EEEEEE', padx=10, pady=5)
+    for index, row in enumerate(data, start=1):
+        name_label = tk.Label(canvas_frame, text=row['Name'], bg='#EEEEEE', padx=40, pady=20)
+        type_label = tk.Label(canvas_frame, text=row['Type'], bg='#EEEEEE', padx=40, pady=20)
+        date_label = tk.Label(canvas_frame, text=row['Date'], bg='#EEEEEE', padx=40, pady=20)
+        time_label = tk.Label(canvas_frame, text=row['Time'], bg='#EEEEEE', padx=40, pady=20)
         name_label.grid(row=index, column=0, sticky='nsew')
         type_label.grid(row=index, column=1, sticky='nsew')
         date_label.grid(row=index, column=2, sticky='nsew')
         time_label.grid(row=index, column=3, sticky='nsew')
-        index += 1
 
-    name_header = tk.Label(window, text='Name', bg='#151515', fg='#EEEEEE', padx=10, pady=5)
-    type_header = tk.Label(window, text='Type', bg='#151515', fg='#EEEEEE', padx=10, pady=5)
-    date_header = tk.Label(window, text='Date', bg='#151515', fg='#EEEEEE', padx=10, pady=5)
-    time_header = tk.Label(window, text='Time', bg='#151515', fg='#EEEEEE', padx=10, pady=5)
-    name_header.grid(row=0, column=0, sticky='nsew')
-    type_header.grid(row=0, column=1, sticky='nsew')
-    date_header.grid(row=0, column=2, sticky='nsew')
-    time_header.grid(row=0, column=3, sticky='nsew')
+    canvas_frame.update_idletasks()  # Update the canvas to compute the scrollable region
+    canvas.config(scrollregion=canvas.bbox("all"))  # Set the scroll region
 
-    # Add grid lines
-    for i in range(index):
-        window.grid_rowconfigure(i, minsize=1)
-        window.grid_columnconfigure(i, minsize=1)
+    # Create a bar chart for attendance types
+    types = [row['Type'] for row in data]
+    type_counts = {t: types.count(t) for t in set(types)}
+    plt.figure(figsize=(6, 4))
+    plt.bar(type_counts.keys(), type_counts.values())
+    plt.xlabel('Attendance Type')
+    plt.ylabel('Count')
+    plt.title('Attendance Types')
+    plt.tight_layout()
 
-def open_script():
-    script_directory = '/path/to/your/script_directory'
-    script_filepath = os.path.join(script_directory, 'your_script.py')
-    subprocess.Popen(['python', script_filepath])
+    # Embed the Matplotlib plot in the GUI
+    graph_canvas = FigureCanvasTkAgg(plt.gcf(), window)
+    graph_canvas.get_tk_widget().pack(side='bottom', fill='both', expand=True)
 
-def capture_video():
-    cap = cv2.VideoCapture(0)
-    while True:
-        ret, frame = cap.read()
-        if ret:
-            cv2.imshow('OpenCV Frame', frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-    cap.release()
-    cv2.destroyAllWindows()
+    # Add labels for current date and time at the bottom
+    date_time_frame = tk.Frame(window)
+    date_label = tk.Label(date_time_frame, text=f'Current Date: {current_date}')
+    time_label = tk.Label(date_time_frame, text=f'Current Time: {current_time}')
+    date_label.pack(side='left')
+    time_label.pack(side='right')
+    date_time_frame.pack(side='bottom')
 
 window = tk.Tk()
 window.minsize(640, 480)
 window.title(f'Attendance Logs for {current_date}')
 
-# Configure grid row and column weights for resizing
-for i in range(4):
-    window.grid_columnconfigure(i, weight=1)
-window.grid_rowconfigure(0, weight=1)
+# Create a canvas widget with a vertical scrollbar
+canvas = tk.Canvas(window)
+canvas.pack(side="left", fill="both", expand=True)
+
+scrollbar = tk.Scrollbar(window, orient="vertical", command=canvas.yview)
+scrollbar.pack(side="right", fill="y")
+
+canvas.config(yscrollcommand=scrollbar.set)
+
+# Create a frame inside the canvas for the scrollable content
+canvas_frame = tk.Frame(canvas)
+canvas.create_window((0, 0), window=canvas_frame, anchor="nw")
 
 attendance_data = read_attendance_data()
-
 display_attendance(attendance_data)
-
-# Add a button overlaying the upper right part of the screen
-open_script_button = tk.Button(window, text="Open Script", command=open_script, bg='#C73659', fg='#EEEEEE')
-open_script_button.place(relx=1, rely=0, anchor='ne', x=-10, y=10)
-
-# Add a button to start capturing video using OpenCV
-capture_video_button = tk.Button(window, text="Capture Video", command=capture_video, bg='#A91D3A', fg='#EEEEEE')
-capture_video_button.place(relx=0.5, rely=1, anchor='s', y=-10)
 
 window.mainloop()
