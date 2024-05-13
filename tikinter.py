@@ -30,9 +30,9 @@ def display_attendance(data):
     # Create a pie chart for attendance types
     types = [row['Type'] for row in data]
     type_counts = {t: types.count(t) for t in set(types)}
-    plt.figure(figsize=(6, 6))
+    plt.figure(figsize=(5, 5))
     plt.pie(type_counts.values(), labels=type_counts.keys(), autopct='%1.1f%%', startangle=140)
-    plt.title('Attendance Types', fontsize=14, fontweight='bold')
+    plt.title('Attendance Types', fontsize=12, fontweight='bold')
     plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle
     plt.tight_layout()
 
@@ -52,10 +52,10 @@ window.title(f'Attendance Logs for {current_date}')
 
 # Create frames for attendance display, graph, and date/time
 attendance_frame = tk.Frame(window, bg='#FFFFFF')
-attendance_frame.pack(side='top', fill='both', expand=True)
+attendance_frame.pack(side='left', fill='both', expand=True)
 
 graph_frame = tk.Frame(window, bg='#FFFFFF')
-graph_frame.pack(side='left', fill='both', expand=True)
+graph_frame.pack(side='right', fill='both', expand=True)
 
 date_time_frame = tk.Frame(window, bg='#EEEEEE', pady=10)
 date_time_frame.pack(side='bottom', fill='x')
